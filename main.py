@@ -35,7 +35,7 @@ def onAppStart(app):
 # On earth screen: Initialises Dragging system
 def onMousePress(app, mouseX, mouseY):
     groundLine = app.groundLine[0]
-    print(mouseX, mouseY)
+    #print(mouseX, mouseY)
     if app.screen == "home":
         if distance(mouseX, 300, mouseY, 300) < 50:
             app.screen = 'space'
@@ -44,7 +44,7 @@ def onMousePress(app, mouseX, mouseY):
     elif app.screen == "emenu":
         if 30 <= mouseX <= 280 and 30 <= mouseY <= 180:
             app.screen = "earthL1"
-            red1 = Bird("red", app.initialX, app.initialY, 5)
+            red1 = Bird("red", app.initialX, app.initialY, 3)
             app.birdList.append(red1)
             pig1 = Pig(500, 290, 0, 0)
             app.pigList.append(pig1)
@@ -55,10 +55,25 @@ def onMousePress(app, mouseX, mouseY):
             app.argStart = 0
             app.numObs = 1
             app.obsList = generateObstaclesL1(app, app.numObs, app.groundLine[0])
+        elif 30 <= mouseX <= 280 and 210 <= mouseY <= 360:
+            app.screen = "earthL2"
+            red1 = Bird("red", app.initialX, app.initialY, 1)
+            app.birdList.append(red1)
+            pig1 = Pig(500, 290, 0, 0)
+            app.pigList.append(pig1)
+            pig2 = Pig(600, 310, 0, 0)
+            app.pigList.append(pig2)
+            app.a = 0
+            app.b = 0
+            app.c = 0
+            app.arg = 0
+            app.argStart = 0
+            app.numObs = 1
+            app.obsList = generateObstaclesL2(app, app.numObs, app.groundLine[0])
         elif 535 <= mouseX <= 785 and 30 <= mouseY <= 180:
             app.screen = "earth"
-            red1 = Bird("red", app.initialX, app.initialY, 1.5)
-            black1 = Bird("black", app.initialX - 40, groundLine, 1.5)
+            red1 = Bird("red", app.initialX, app.initialY, 1)
+            black1 = Bird("black", app.initialX - 40, groundLine, 1)
             app.birdList.append(red1)
             app.birdList.append(black1)
             pig1 = Pig(450, 290, 0, 0)
@@ -149,44 +164,55 @@ def onStep(app):
 
 def redrawAll(app):
     if app.screen == "home":
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space\\src\\normalbackground.jpg", 400, 225, align='center', width=800, height=450)
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space - Copy\\src\\logo.png", 400, 100, align='center')
+        drawImage("src\\normalbackgroundHD.jpg", 400, 225, align='center', width=800, height=450)
+        drawImage("src\\logo.png", 400, 100, align='center')
         #drawLabel("Angry Birds", 400, 100, size=30)
         drawCircle(300, 300, 50, fill='blue')
         #drawCircle(500, 300, 50, fill='red')
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space - Copy\\src\\earth.png", 500, 300, align='center', width=100, height=100)
+        drawImage("src\\earth.png", 500, 300, align='center', width=100, height=100)
     elif app.screen == "emenu":
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space\\src\\normalbackground.jpg", 400, 225, align='center', width=800, height=450)
+        drawImage("src\\normalbackground.jpg", 400, 225, align='center', width=800, height=450)
         drawRect(25, 25, 260, 160, fill="white")
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space - Copy\\src\\level0.png", 30, 30, width=250, height=150)
+        drawImage("src\\level0.png", 30, 30, width=250, height=150)
         drawRect(530, 25, 260, 160, fill="white")
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space - Copy\\src\\level1.png", 535, 30, width=250, height=150)
+        drawImage("src\\level1.png", 535, 30, width=250, height=150)
+        drawRect(25, 205, 260, 160, fill="white")
+        drawImage("src\\level2.png", 30, 210, width=250, height=150)
         drawCircle(100, 400, 25, fill='blue')
     elif "earth" in app.screen:
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space - Copy\\src\\normalbackground.jpg", 400, 225, align='center', width=800, height=450)
+        drawImage("src\\normalbackground.jpg", 400, 225, align='center', width=800, height=450)
         #drawRect(0, 0, app.width, app.height, fill="lightBlue")
         #drawRect(0, 352, app.width, app.height, fill="green")
         #drawRect(750, 0, 50, 450, fill="black")
-        for i in app.aimdots:
-            x, y = i
-            try:
-                drawCircle(x, y, 5, fill="grey")
-            except Exception:
+        allDead = False
+        for i in app.pigList:
+            if i.dead == True:
+                #allDead = True
                 pass
-        for j in app.obsList:
-            drawObstacle(j.x, j.y, j.w, j.h, j.arg)
-            #drawImage(j.image, j.x, j.y, align="center", width=j.w, height = j.h, rotateAngle=j.arg)
-        for j in app.birdList:
-            drawImage(j.image, j.posX, j.posY, align='center', width=j.w, height=j.h, rotateAngle = (j.arg)/math.pi*180)
-        for j in app.thrown:
-            drawImage(j.image, j.posX, j.posY, align='center', width=j.w, height=j.h, rotateAngle = (j.arg)/math.pi*180)
-        for j in app.pigList:
-            if not j.dead:
-                drawImage(j.image, j.posX, j.posY, align='center', width=j.w, height=j.h)
-        drawImage("C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space\\src\\catapault.png", 120, 325, align='center', width=30, height=60)
-        drawLabel("POINTS", 80, 40, size=30)
-        drawLabel(str(app.points), 200, 40, size=30)
-        drawCircle(100, 400, 25, fill='blue')
+        
+        if not allDead:
+            for i in app.aimdots:
+                x, y = i
+                try:
+                    drawCircle(x, y, 5, fill="grey")
+                except Exception:
+                    pass
+            for j in app.obsList:
+                drawObstacle(j.x, j.y, j.w, j.h, j.arg)
+                #drawImage(j.image, j.x, j.y, align="center", width=j.w, height = j.h, rotateAngle=j.arg)
+            for j in app.birdList:
+                drawImage(j.image, j.posX, j.posY, align='center', width=j.w, height=j.h, rotateAngle = (j.arg)/math.pi*180)
+            for j in app.thrown:
+                drawImage(j.image, j.posX, j.posY, align='center', width=j.w, height=j.h, rotateAngle = (j.arg)/math.pi*180)
+            for j in app.pigList:
+                if not j.dead:
+                    drawImage(j.image, j.posX, j.posY, align='center', width=j.w, height=j.h)
+            drawImage("src\\catapault.png", 120, 325, align='center', width=30, height=60)
+            drawLabel("POINTS", 80, 40, size=30)
+            drawLabel(str(app.points), 200, 40, size=30)
+            drawCircle(100, 400, 25, fill='blue')
+        else:
+            drawRect(app.width/2, app.height/2, app.width, app.height, fill="lightGreen")
 
 def main():
     runApp()

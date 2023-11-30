@@ -7,7 +7,7 @@ import math
 
 class Pig:
     def __init__(self, x, y, structID, blockID, dead=False):
-        self.image = "C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space - Copy\\src\\normalPig.png"
+        self.image = "src\\normalPig.png"
         self.posX = x
         self.posY = y
         self.w = 40
@@ -18,7 +18,7 @@ class Pig:
         self.blockID = blockID
         self.vx = 0
         self.dx = 0.75
-        self.vy = 0
+        self.vy = 1
         self.retention = 0.4
         self.hit = False
     

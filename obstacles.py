@@ -45,7 +45,7 @@ class Brick:
         self.hasDoublePivot = hasDoublePivot
         self.level = level
         if typing == "woodV":
-            self.image = "C:\\Users\\chris\\Desktop\\Python Projects\\Angry Birds Space - Copy\\src\\woodPlank.png"
+            self.image = "src\\woodPlank.png"
     
     def fall_gravity(self):
         #print(app.collisionDict.levels)
@@ -200,6 +200,23 @@ def generateObstaclesL1(app, n, groundLine):
     app.collisionDict.add(brick2.structID, brick2.blockID, 352)
 
     lst = [brick1, brick2]
+    return lst
+
+def generateObstaclesL2(app, n, groundLine):
+    app.collisionDict = CollisonHandler()
+    brick1 = Brick(450, 200, 0, 100, 20, False, False, False, 0, 1, 0, "woodH")
+    app.collisionDict.add(brick1.structID, brick1.blockID, 352 - 140 - 20)
+    app.collisionDict.addLevel(brick1.level, 352)
+    brick2 = Brick(450, 280, 0, 20, 150, True, False, False, 0, 0, 0, "woodV")
+    app.collisionDict.add(brick2.structID, brick2.blockID, 352)
+    brick3 = Brick(550, 315, 0, 20, 50, True, False, True, 1, 0, 0, "woodV")
+    app.collisionDict.add(brick3.structID, brick3.blockID, 352)
+    brick4 = Brick(650, 315, 0, 20, 50, True, False, True, 1, 1, 0, "woodV")
+    app.collisionDict.add(brick4.structID, brick4.blockID, 352)
+    brick5 = Brick(600, 290, 0, 120, 20, False, True, True, 1, 2, 0, "woodH")
+    app.collisionDict.add(brick5.structID, brick5.blockID, [352-40, 352-40])
+
+    lst = [brick1, brick2, brick3, brick4, brick5]
     return lst
 
 def boundaryCalculator(lst):
