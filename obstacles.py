@@ -2,9 +2,107 @@ from cmu_graphics import *
 import math
 import random
 
+def distance(x1, x2, y1, y2):
+    return ((x1 - x2)**2 + (y1 - y2)**2)**0.5
+
+class SpaceBrick:
+    def __init__(self, x, y, z, w, h, pivot, doublePivot, hasDoublePivot, structID, blockID, level, typing, hit=False):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.w = w
+        self.h = h
+        self.vx = 0
+        self.vy = 0
+        self.retention = 0.4
+        self.hit = hit
+        self.arg = 0
+        self.pivot = pivot #list of Pivot Points, ie. [200, 400]...
+        self.structID = structID
+        self.blockID = blockID
+        self.dAngle = 1
+        self.aAngle = 0.25
+        self.doublePivot = doublePivot
+        self.hasDoublePivot = hasDoublePivot
+        self.level = level
+        if typing == "woodV":
+            self.image = "src/woodPlank.png"
+    
+    def __eq__(self, other):
+        return (self.x == other.x) and (self.y ==  other.y)
+
+    def fall_gravity(self):
+        hit = False
+        ind = -1
+        for i in range(len(app.planetList)):
+            planet = app.planetList[i]
+            if planet.r1 < distance(self.x, planet.x, self.y, planet.y) < planet.r2:
+                ind = i
+                break
+        boundaryLst = boundaryCalculator(app.obsList)
+        for i in range(len(boundaryLst)):
+            if not self == app.obsList[i]:
+                x1, x2, y1, y2 = boundaryLst[i]
+                if min(x1, x2) < self.x + self.vx < max(x1, x2) and min(y1, y2) < self.y + self.vy < max(y1, y2):
+                    hit = True
+        if ind != -1 and not hit:
+            planet = app.planetList[ind]
+            if distance(self.x + self.vx, planet.x, self.y + self.vy, planet.y) > planet.r1 + self.w/2 - 10:
+                self.x += self.vx
+                self.y += self.vy
+                arg = math.tanh((self.y - planet.y)/(self.x - planet.x))
+                if self.x > planet.x:
+                    arg += math.pi
+                self.arg = math.degrees(arg)
+                self.initArg = math.degrees(arg)
+                self.vx += math.cos(arg)*planet.deltaF
+                self.vy += math.sin(arg)*planet.deltaF
+    
+    def pivot_gravity(self):
+        ind = -1
+        for i in range(len(app.planetList)):
+            planet = app.planetList[i]
+            if planet.r1 < distance(self.x, planet.x, self.y, planet.y) < planet.r2:
+                ind = i
+                break
+        bird = app.thrown[-1]
+        planet = app.planetList[ind]
+        if self.arg + self.dAngle <= self.initArg + 90:
+            self.arg += self.dAngle
+            self.dAngle += self.aAngle
+            if planet.r1 + 10 < distance(self.x, planet.x, self.y, planet.y) < planet.r2:
+                self.vx -= math.cos(math.radians(self.arg))*bird.vx/4
+                self.vy -= math.sin(math.radians(self.arg))*bird.vy/4
+                self.x += self.vx
+                self.y += self.vy
+        else:
+            self.arg = self.initArg + 90
+        for i in range(len(boundaryCalculator(app.obsList))):
+            if app.obsList[i].hit:
+                x1, x2, y1, y2 = boundaryCalculator(app.obsList)[i]
+                for j in range(len(boundaryCalculator(app.obsList))):
+                    #print(boundaryCalculator(app.obsList)[i], boundaryCalculator(app.obsList)[j])
+                    if i != j:
+                        x3, x4, y3, y4 = boundaryCalculator(app.obsList)[j]
+                        if (x1 > x4 and x3 > x2) and (y4 < y2):
+                            app.obsList[j].hit = True
+                            #app.points += 100
+            else:
+                continue
+
+
+def generateSpaceObstaclesL1(app, n, groundLine):
+    app.collisionDict = CollisonHandler()
+    spaceBrick1 = SpaceBrick(525, 330, 0, 20, 40, False, False, False, 0, 1, 0, "woodH")
+    spaceBrick2 = SpaceBrick(500, 300, 0, 40, 20, True, False, False, 0, 1, 0, "woodH")
+    spaceBrick3 = SpaceBrick(525, 138, 0, 20, 40, False, False, False, 0, 1, 0, "woodH")
+    spaceBrick4 = SpaceBrick(500, 150, 0, 40, 20, True, False, False, 0, 1, 0, "woodH")
+    return [spaceBrick1, spaceBrick2, spaceBrick3, spaceBrick4]
+
 # CollisionHandler saves a dictionary (O(1)) of StructureIDs and BlockIDs 
 # to mark the lowest point an object can go. This helps to ensure that 
 # bricks do not overlap.
+
 class CollisonHandler:
     def __init__(self):
         self.lowests = dict()
@@ -22,7 +120,10 @@ class CollisonHandler:
     def addLevel(self, level, lowest):
         self.levels[level] = lowest
 
-# Brick Class defines 
+# Brick Class defines bricks with 2 main methods:
+#################################################
+# 1. pivot_gravity: When Brick is hit by a bird
+# 2. fall_gravity: When Brick is subject to gravity. Similarly uses dictionary to refrence lowest points
 
 class Brick:
     def __init__(self, x, y, z, w, h, pivot, doublePivot, hasDoublePivot, structID, blockID, level, typing, hit=False):
@@ -45,7 +146,7 @@ class Brick:
         self.hasDoublePivot = hasDoublePivot
         self.level = level
         if typing == "woodV":
-            self.image = "src\\woodPlank.png"
+            self.image = "src/woodPlank.png"
     
     def fall_gravity(self):
         #print(app.collisionDict.levels)
@@ -154,10 +255,14 @@ class Brick:
             else:
                 continue
 
-def drawObstacle(x, y, w, h, arg):
-    drawRect(x, y, w, h, fill='brown', align='center', rotateAngle = arg)
+########################################################################################################
+# LEVEL OBSTACLE GENERATION
+########################################################################################################
 
-def generateObstacles(app, n, groundLine):
+def drawObstacle(x, y, w, h, arg):
+    drawRect(x, y, w, h, fill='brown', align='center', rotateAngle=arg)
+
+def generateObstaclesL3(app, n, groundLine):
     app.collisionDict = CollisonHandler()
     brick1 = Brick(450, 200, 0, 150, 20, False, True, True, 0, 2, 0, "woodH")
     app.collisionDict.add(brick1.structID, brick1.blockID, [352-140-22, 352-140-22])
@@ -193,8 +298,8 @@ def generateObstacles(app, n, groundLine):
 
 def generateObstaclesL1(app, n, groundLine):
     app.collisionDict = CollisonHandler()
-    brick1 = Brick(450, 200, 0, 100, 20, False, False, False, 0, 1, 0, "woodH")
-    app.collisionDict.add(brick1.structID, brick1.blockID, 352 - 140 - 20)
+    brick1 = Brick(450, 180, 0, 100, 20, False, False, False, 0, 1, 0, "woodH")
+    app.collisionDict.add(brick1.structID, brick1.blockID, 352 - 140 - 6)
     app.collisionDict.addLevel(brick1.level, 352)
     brick2 = Brick(450, 280, 0, 20, 150, True, False, False, 0, 0, 0, "woodV")
     app.collisionDict.add(brick2.structID, brick2.blockID, 352)

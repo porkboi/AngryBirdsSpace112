@@ -1,4 +1,6 @@
 from cmu_graphics import *
+from obstacles import *
+from opp import *
 import math
 
 def distance(x1, x2, y1, y2):
@@ -68,3 +70,55 @@ def changeDistance(app, mouseX, mouseY, d=70):
             coordinate = parabolaPlot(app, arg, step)
             if coordinate < 352:
                 app.aimdots.append((step, coordinate))
+
+def spaceChangeDistance(app, mouseX, mouseY, d=70):
+    app.birdList[0].posX = mouseX
+    app.birdList[0].posY = mouseY
+    if mouseX - app.initialX != 0:
+        arg = math.tanh((mouseY - app.initialY)/(mouseX - app.initialX))
+        app.birdList[0].posX = app.initialX - d* math.cos(arg)
+        app.birdList[0].posY = app.initialY - d* math.sin(arg)
+        app.birdList[0].arg = arg
+
+#Try to plot physics
+
+def spacePlotter(app, bird):
+    vx = (app.initialX - bird.posX) //6
+    vy = (app.initialY - bird.posY) //6
+    x, y = bird.posX, bird.posY
+    hit = False
+    for i in range(300):
+        for planet in app.planetList:
+            if planet.r1 < distance(x, planet.x, y, planet.y) < planet.r2:
+                if y < planet.y:
+                    vy += 0.45*planet.m * planet.deltaF
+                elif y == planet.y:
+                    pass
+                elif y > planet.y:
+                    vy -= 0.65*planet.m * planet.deltaF
+                if x > planet.x:
+                    vx -= 0.65*planet.m * planet.deltaF
+                elif x == planet.x:
+                    pass
+                elif x < planet.x:
+                    vx += 0.45*planet.m * planet.deltaF
+            elif distance(x, planet.x, y, planet.y) < planet.r1:
+                hit = True
+        for obs in boundaryCalculator(app.obsList):
+            x1, x2, y1, y2 = obs
+            if min(x1, x2) < x + vx < max(x1, x2) and min(y1, y2) < y + vy < max(y1, y2):
+                hit = True
+        for pig in pigBoundaryCalculator(app.pigList):
+            x1, x2, y1, y2 = pig
+            if min(x1, x2) <= x + vx <= max(x1, x2) and min(y1, y2) <= y + vy <= max(y1, y2):
+                hit = True
+        #print(hit)
+        if not hit:
+            x, y = x + vx, y + vy
+            #if i % 3 == 0:
+            app.aimdots.append((x, y))
+        else:
+            break
+        
+
+                

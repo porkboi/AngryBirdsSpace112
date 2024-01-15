@@ -1,17 +1,39 @@
 from cmu_graphics import *
-from parabolaPlot import *
 from obstacles import *
 from environment import *
-from birds import *
 import math
+
+def pigsAllDead():
+    allDead = 0
+    for i in app.pigList:
+        if i.dead == True:
+            allDead += 1
+    if allDead == len(app.pigList):
+        allDead = True
+    else:
+        allDead = False
+    return allDead
+
+def distance(x1, x2, y1, y2):
+    return ((x1 - x2)**2 + (y1 - y2)**2)**0.5
+
+# Pig Class: Generates Pigs with 2 methods:
+############################################################################
+# 1. Fly: When Pig is hit by a bird
+# 2. Fall: When Pig is subject to gravity. Similarly uses dictionary to refrence lowest points
 
 class Pig:
     def __init__(self, x, y, structID, blockID, dead=False):
-        self.image = "src\\normalPig.png"
+        # Citation: https://angrybirds.fandom.com/wiki/Minion_Pigs/Small_Pig
+        self.image = "src/normalPig.png"
         self.posX = x
         self.posY = y
-        self.w = 40
-        self.h = 40
+        if "space" in app.screen:
+            self.w = 30
+            self.h = 30
+        else:
+            self.w = 40
+            self.h = 40
         self.dead = dead
         self.hp = 100
         self.structID = structID
@@ -19,9 +41,61 @@ class Pig:
         self.vx = 0
         self.dx = 0.75
         self.vy = 1
+        self.vys = 0
         self.retention = 0.4
         self.hit = False
+        self.drop = False
+        self.arg = 0
     
+    def spaceFall(self, app):
+        drop = False
+        ind = -1
+        for i in range(len(app.planetList)):
+            planet = app.planetList[i]
+            #print(distance(self.posX, planet.x, self.posY, planet.y))
+            if planet.r1 < distance(self.posX, planet.x, self.posY, planet.y) < planet.r2:
+                ind = i
+                break
+        boundaryLst = boundaryCalculator(app.obsList)
+        planet = app.planetList[ind]
+        for i in range(len(boundaryLst)):
+            x1, x2, y1, y2 = boundaryLst[i]
+            #print(x1, x2, self.posX - self.h/2)
+            if self.posX < planet.x and self.posY < planet.y:
+                if min(x1, x2) < self.posX + self.h/2 < max(x1, x2) and min(y1, y2) < self.posY + self.w/2 < max(y1, y2):
+                    drop = True
+                    self.hp -= 50
+            elif self.posX > planet.x and self.posY < planet.y:
+                if min(x1, x2) < self.posX - self.h/2 < max(x1, x2) and min(y1, y2) < self.posY + self.w/2 < max(y1, y2):
+                    drop = True
+                    self.hp -= 50
+            elif self.posX < planet.x and self.posY > planet.y:
+                if min(x1, x2) < self.posX + self.h/2 < max(x1, x2) and min(y1, y2) < self.posY - self.w/2 < max(y1, y2):
+                    drop = True
+                    self.hp -= 50
+            elif self.posX > planet.x and self.posY > planet.y:
+                if min(x1, x2) < self.posX - self.h/4 < max(x1, x2) and min(y1, y2) < self.posY - self.w/2 < max(y1, y2):
+                    drop = True
+                    self.hp -= 50
+            
+        #print(ind, drop, self.vx, self.vys,self.hp)
+        if ind != -1 and not drop and not self.dead:
+            if distance(self.posX + self.vx, planet.x, self.posY + self.vys, planet.y) > planet.r1 + self.w/2 - 10:
+                self.posX += self.vx
+                self.posY += self.vys
+                arg = math.tanh((self.posY - planet.y)/(self.posX - planet.x))
+                if self.posX > planet.x:
+                    arg += math.pi
+                self.arg = math.degrees(arg)
+                self.vx += math.cos(arg)*planet.deltaF*0.5
+                self.vys += math.sin(arg)*planet.deltaF*0.5
+        elif drop and not self.dead and abs(self.vx) > 3.5:
+            self.vx = 0
+            self.vys = 0
+            if self.hp <= 0:
+                self.dead = True
+                app.points += 500
+
     def fall(self, app):
         if isinstance(app.collisionDict.lowests[self.structID][self.blockID], list):
             #print(app.collisionDict.lowests[self.structID][self.blockID])
@@ -84,6 +158,8 @@ class Pig:
             self.vx = self.vx * -1 * self.retention
         self.posY += self.vy
         self.posX += self.vx
+
+# Calculates a boundary box for pigs to measure collisions.
 
 def pigBoundaryCalculator(lst):
     newLst = []
